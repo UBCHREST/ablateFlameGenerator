@@ -1,0 +1,74 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ablate-client-debug",
+      "displayName": "CLion Debug Config",
+      "description": "Default build for the ABLATE Client",
+      "binaryDir": "${sourceDir}/cmake-build-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "COMPILE_MPI_COMMAND": "$env{PETSC_DIR}/arch-ablate-debug/bin/mpirun",
+        "ABLATE_PATH": "$env{ABLATE_PATH}"
+      },
+      "environment": {
+        "PETSC_ARCH": "arch-ablate-debug",
+        "PKG_CONFIG_PATH": "$env{PETSC_DIR}/arch-ablate-debug/lib/pkgconfig:$penv{PKG_CONFIG_PATH}"
+      }
+    },
+    {
+      "name": "ablate-client-opt",
+      "displayName": "CLion Opt Config",
+      "description": "Default build for ABLATE in CLion",
+      "binaryDir": "${sourceDir}/cmake-build-opt",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "COMPILE_MPI_COMMAND": "$env{PETSC_DIR}/arch-ablate-opt/bin/mpirun",
+        "ABLATE_PATH": "$env{ABLATE_PATH}"
+      },
+      "environment": {
+        "PETSC_ARCH": "arch-ablate-opt",
+        "PKG_CONFIG_PATH": "$env{PETSC_DIR}/arch-ablate-opt/lib/pkgconfig:$penv{PKG_CONFIG_PATH}"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "ablate-client-debug",
+      "configurePreset": "ablate-client-debug"
+    },
+    {
+      "name": "ablate-client-opt",
+      "configurePreset": "ablate-client-opt"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "ablate-client-debug",
+      "configurePreset": "ablate-client-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "ablate-client-opt",
+      "configurePreset": "ablate-client-opt",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    }
+  ]
+}
