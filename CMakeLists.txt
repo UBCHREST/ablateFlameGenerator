@@ -24,7 +24,7 @@ else ()
 endif ()
 
 # Set the project details
-project(ablateClientTemplate VERSION 0.0.2)
+project(ablateFlameGenerator VERSION 0.0.2)
 
 # Set the c/c++ Standards
 set(CMAKE_C_STANDARD 99)
@@ -33,5 +33,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # define the two sample programs and link to ablate
-add_executable(ablateLibraryClient ablateLibraryClient.cpp)
-target_link_libraries(ablateLibraryClient PUBLIC ablateLibrary)
+add_executable(ablateFlameGenerator ablateFlameGenerator.cpp)
+target_link_libraries(ablateFlameGenerator PUBLIC ablateLibrary)
+
+# include the include dir
+add_subdirectory(src)

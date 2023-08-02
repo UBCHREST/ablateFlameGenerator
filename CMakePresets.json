@@ -7,9 +7,9 @@
   },
   "configurePresets": [
     {
-      "name": "ablate-client-debug",
+      "name": "ablate-flame-generator-debug",
       "displayName": "CLion Debug Config",
-      "description": "Default build for the ABLATE Client",
+      "description": "Default build for the ABLATE Flame Generator",
       "binaryDir": "${sourceDir}/cmake-build-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -22,9 +22,9 @@
       }
     },
     {
-      "name": "ablate-client-opt",
+      "name": "ablate-flame-generator-opt",
       "displayName": "CLion Opt Config",
-      "description": "Default build for ABLATE in CLion",
+      "description": "Default build for ABLATE Flame Generator in CLion",
       "binaryDir": "${sourceDir}/cmake-build-opt",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -39,18 +39,18 @@
   ],
   "buildPresets": [
     {
-      "name": "ablate-client-debug",
-      "configurePreset": "ablate-client-debug"
+      "name": "ablate-flame-generator-debug-build",
+      "configurePreset": "ablate-flame-generator-debug"
     },
     {
-      "name": "ablate-client-opt",
-      "configurePreset": "ablate-client-opt"
+      "name": "ablate-flame-generator-opt-build",
+      "configurePreset": "ablate-flame-generator-opt"
     }
   ],
   "testPresets": [
     {
-      "name": "ablate-client-debug",
-      "configurePreset": "ablate-client-debug",
+      "name": "ablate-flame-generator-debug-test",
+      "configurePreset": "ablate-flame-generator-debug",
       "output": {
         "outputOnFailure": true
       },
@@ -60,8 +60,8 @@
       }
     },
     {
-      "name": "ablate-client-opt",
-      "configurePreset": "ablate-client-opt",
+      "name": "ablate-flame-generator-op-testt",
+      "configurePreset": "ablate-flame-generator-opt",
       "output": {
         "outputOnFailure": true
       },

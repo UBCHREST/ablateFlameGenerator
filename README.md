@@ -1,8 +1,13 @@
-# ABLATE Client Template
+# ABLATE Flame Generator
 
-An example ABLATE client that illustrates using ABLATE in your application. See
-the [ABLATE documentation](https://ablate.dev/content/development/ClientLibrary.html) for details about the library.
+This executable uses ABLATE to generate a flame of flames based upon the specifed input file.  This code assumes:
 
+ - That the input file uses a 1D ablate::domain::BoxMeshBoundaryCells domain
+ - That no io is specifed in the input
+ - 
+
+
+# Setup
 You must install PETSc following the instructions for you system on
 the [ABLATE Build Wiki](https://github.com/UBCHREST/ablate/wiki) along with setting additional PETSc environmental
 variable:
@@ -20,7 +25,7 @@ environment variable.
 export ABLATE_PATH="" #OPTIONAL path to ABLATE source directory/path/to/ablate/source/dir
 ```
 
-## ownloading and Building with CLion
+## Downloading and Building with CLion
 
 CLion is a C/C++ IDE that uses cmake files for configuration. These directions outline the steps to running the
 framework with CLion.
@@ -28,8 +33,8 @@ framework with CLion.
 1. Download and Install [CLion](https://www.jetbrains.com/clion/).
 2. Open CLion and select *Get From VCS* from the welcome window and either
     - (recommended) Select GitHub and Login/Authorize access. Then follow on-screen instructions to clone your repo of
-      ABLATE Client,
-    - Select Git from the *Version Control* dropdown and enter your ABLATE Client Repo.
+      ABLATE Flame Generator,
+    - Select Git from the *Version Control* dropdown and enter your ABLATE Flame Generator Repo.
 3. Enable the ```ablate-client-debug``` and ```ablate-client-opt``` build profiles.
     - If not opened by default, open the Settings / Preferences > Build, Execution, Deployment > CMake preference window
       from the menu bar.
