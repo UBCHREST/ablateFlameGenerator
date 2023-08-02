@@ -15,10 +15,13 @@ target_include_directories(ablateFlameGenerator PRIVATE ${CMAKE_CURRENT_BINARY_D
 target_sources(ablateFlameGenerator
         PRIVATE
         steadyStateStepper.cpp
-        variableChange.cpp
+        validRange.cpp
+        variableRange.cpp
 
         PUBLIC
         steadyStateStepper.hpp
         convergenceCriteria.hpp
         variableChange.hpp
+        convergenceException.hpp
+        validRange.hpp
 )

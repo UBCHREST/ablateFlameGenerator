@@ -1,6 +1,7 @@
 #include "steadyStateStepper.hpp"
-
+#include <io/interval/fixedInterval.hpp>
 #include <utility>
+#include "convergenceException.hpp"
 
 ablateFlameGenerator::SteadyStateStepper::SteadyStateStepper(std::shared_ptr<ablate::domain::Domain> domain,
                                                              std::vector<std::shared_ptr<ablateFlameGenerator::ConvergenceCriteria>> convergenceCriteria,
@@ -8,20 +9,38 @@ ablateFlameGenerator::SteadyStateStepper::SteadyStateStepper(std::shared_ptr<abl
                                                              std::shared_ptr<ablate::domain::Initializer> initialization,
                                                              std::vector<std::shared_ptr<ablate::mathFunctions::FieldFunction>> absoluteTolerances,
                                                              std::vector<std::shared_ptr<ablate::mathFunctions::FieldFunction>> relativeTolerances, bool verboseSourceCheck,
-                                                             std::shared_ptr<ablate::monitors::logs::Log> log)
-    : ablate::solver::TimeStepper(std::move(domain), arguments, nullptr /* no io for stead state solver */, std::move(initialization), {} /* no exact solution for stead state solver */,
-                                  std::move(absoluteTolerances), std::move(relativeTolerances), verboseSourceCheck),
+                                                             std::shared_ptr<ablate::monitors::logs::Log> log, int checkIntervalIn)
+    : ablate::solver::TimeStepper(std::move(domain), arguments, std::move(serializer), std::move(initialization), {} /* no exact solution for stead state solver */, std::move(absoluteTolerances),
+                                  std::move(relativeTolerances), verboseSourceCheck),
+      checkInterval(checkIntervalIn ? checkIntervalIn : 100),
       convergenceCriteria(std::move(convergenceCriteria)),
       log(std::move(log)) {}
 
 ablateFlameGenerator::SteadyStateStepper::~SteadyStateStepper() = default;
 
+bool ablateFlameGenerator::SteadyStateStepper::Initialize() {
+    // Call the super class to determine if it needs
+    bool justInitialized = TimeStepper::Initialize();
+
+    // if this was justInitialized also, set up the criteria
+    if (justInitialized) {
+        for (auto& criterion : convergenceCriteria) {
+            criterion->Initialize(GetDomain());
+        }
+    }
+
+    return justInitialized;
+}
+
 void ablateFlameGenerator::SteadyStateStepper::Solve() {
     // Do the basic initialize
-    TimeStepper::Initialize();
+    Initialize();
+
+    // Store the max steps to use for a final check
+    TSGetMaxSteps(GetTS(), &maxSteps) >> ablate::utilities::PetscUtilities::checkError;
 
     // Set the initial max time steps
-    TSSetMaxSteps(GetTS(), stepsBetweenChecks) >> ablate::utilities::PetscUtilities::checkError;
+    TSSetMaxSteps(GetTS(), checkInterval) >> ablate::utilities::PetscUtilities::checkError;
 
     // perform a basic solve (this will set up anything else that needs to be setup)
     TimeStepper::Solve();
@@ -30,33 +49,48 @@ void ablateFlameGenerator::SteadyStateStepper::Solve() {
     bool converged = false;
 
     // step until convergence is reached
-    if (!converged) {
+    while (!converged) {
         // Solve to the next number of steps
         TSSolve(GetTS(), nullptr) >> ablate::utilities::PetscUtilities::checkError;
 
         // check for convergence.  Set converged to true before checking
         converged = true;
 
-        // Get the current step
+        // Get the current step and time
         PetscInt step;
         TSGetStepNumber(GetTS(), &step) >> ablate::utilities::PetscUtilities::checkError;
 
+        PetscReal time;
+        TSGetTime(GetTS(), &time) >> ablate::utilities::PetscUtilities::checkError;
+
+        // check each criterion
+        if (log) {
+            log->Printf("Checking convergence after %" PetscInt_FMT " steps.\n", step);
+        }
         for (auto& criterion : convergenceCriteria) {
-            converged = converged && criterion->CheckConvergence(GetDomain(), step, log);
+            converged = converged && criterion->CheckConvergence(GetDomain(), time, step, log);
         }
 
         // report log status
         if (log) {
             if (converged) {
-                log->Printf("Convergence reached after %" PetscInt_FMT "steps", step);
+                log->Printf("\tConvergence reached after %" PetscInt_FMT " steps.\n", step);
             }
-            if (converged) {
-                log->Printf("Solution not converged after %" PetscInt_FMT " steps.", step);
+            if (!converged) {
+                log->Printf("\tSolution not converged after %" PetscInt_FMT " steps.\n", step);
             }
         }
 
+        // check for max steps
+        if (!converged && step > maxSteps) {
+            if (log) {
+                log->Printf("Failed to converge after %" PetscInt_FMT " steps.\n", step);
+            }
+            throw ConvergenceException("Failed to converge after " + std::to_string(step) + ".\n");
+        }
+
         // Increase the number of steps and try again
-        TSSetMaxSteps(GetTS(), stepsBetweenChecks + step) >> ablate::utilities::PetscUtilities::checkError;
+        TSSetMaxSteps(GetTS(), checkInterval + step) >> ablate::utilities::PetscUtilities::checkError;
     }
 }
 
@@ -69,4 +103,4 @@ REGISTER(ablate::solver::TimeStepper, ablateFlameGenerator::SteadyStateStepper, 
          OPT(std::vector<ablate::mathFunctions::FieldFunction>, "absoluteTolerances", "optional absolute tolerances for a field"),
          OPT(std::vector<ablate::mathFunctions::FieldFunction>, "relativeTolerances", "optional relative tolerances for a field"),
          OPT(bool, "verboseSourceCheck", "does a slow nan/inf for solvers that use rhs evaluation. This is slow and should only be used for debug."),
-         OPT(ablate::monitors::logs::Log, "log", "optionally log the convergence history"));
+         OPT(ablate::monitors::logs::Log, "log", "optionally log the convergence history"), OPT(int, "checkInterval", "the number of steps between criteria checks"));
