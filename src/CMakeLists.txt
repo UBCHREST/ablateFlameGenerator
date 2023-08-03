@@ -11,17 +11,3 @@ configure_file (
 
 # add the new version.h to the include directories
 target_include_directories(ablateFlameGenerator PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-
-target_sources(ablateFlameGenerator
-        PRIVATE
-        steadyStateStepper.cpp
-        validRange.cpp
-        variableRange.cpp
-
-        PUBLIC
-        steadyStateStepper.hpp
-        convergenceCriteria.hpp
-        variableChange.hpp
-        convergenceException.hpp
-        validRange.hpp
-)

@@ -1,5 +1,4 @@
 #include <petsc.h>
-#include <domain/boxMesh.hpp>
 #include <domain/boxMeshBoundaryCells.hpp>
 #include <environment/download.hpp>
 #include <environment/runEnvironment.hpp>
@@ -11,7 +10,7 @@
 #include "builder.hpp"
 #include "localPath.hpp"
 #include "parameters/mapParameters.hpp"
-#include "steadyStateStepper.hpp"
+#include "solver/steadyStateStepper.hpp"
 #include "utilities/mpiUtilities.hpp"
 #include "utilities/petscUtilities.hpp"
 #include "version.h"
@@ -77,6 +76,7 @@ int main(int argc, char** argv) {
             // Get the flameGenerator parameters
             auto flameGeneratorParameters = parser->GetByName<ablate::parameters::Parameters>("flameGenerator");
             std::size_t maxNumberOfFlames = flameGeneratorParameters->Get("maxNumberFlames", 10);
+            double scaleFactor = flameGeneratorParameters->Get("scaleFactor", 0.85);
 
             // set up the monitor
             auto setupEnvironmentParameters = parser->GetByName<ablate::parameters::Parameters>("environment");
@@ -100,6 +100,12 @@ int main(int argc, char** argv) {
             std::filesystem::create_directory(baseOutputDirectory / "flames");
             auto flameSerializer = std::make_shared<ablate::io::Hdf5MultiFileSerializer>(std::make_shared<ablate::io::interval::FixedInterval>());
 
+            // Keep track of the total scale factor
+            double totalScaleFactor = 1.0;
+
+            // keep track of the old stepper to copy over final conditions
+            std::shared_ptr<ablate::solver::SteadyStateStepper> oldFlameStepper = nullptr;
+
             // March over each possible flame
             for (std::size_t flameId = 0; flameId < maxNumberOfFlames; ++flameId) {
                 // Output information about this flame
@@ -110,31 +116,41 @@ int main(int argc, char** argv) {
                 ablate::environment::RunEnvironment::Setup(ablate::environment::RunEnvironment::Parameters().Title(title).TagDirectory(false).OutputDirectory(baseOutputDirectory / title));
 
                 // create the base/old flame
-                auto oldFlameStepper = std::dynamic_pointer_cast<ablateFlameGenerator::SteadyStateStepper>(ablate::Builder::Build(parser));
+                auto currentFlameStepper = std::dynamic_pointer_cast<ablate::solver::SteadyStateStepper>(ablate::Builder::Build(parser));
                 // make sure the stepper is an ablateFlameGenerator::SteadyStateStepper
-                if (oldFlameStepper == nullptr) {
+                if (currentFlameStepper == nullptr) {
                     throw std::invalid_argument("The TimeStepper must be ablateFlameGenerator::SteadyStateStepper");
                 }
 
-                // Do some sanity checks to make sure the classes are what we think they should be
-                const auto& domain = oldFlameStepper->GetDomain();
-                try {
-                    [[maybe_unused]] auto& domainCheck = dynamic_cast<const ablate::domain::BoxMeshBoundaryCells&>(domain);
-                } catch (std::bad_cast&) {
-                    throw std::invalid_argument("The Domain must be of type !ablate::domain::BoxMeshBoundaryCells");
+                // Set up the new time stepper
+                currentFlameStepper->Initialize();
+
+                // Copy over the old stepper if available
+                if (oldFlameStepper) {
+                    Vec oldSolutionVector = oldFlameStepper->GetSolutionVector();
+                    Vec currentSolutionVector = currentFlameStepper->GetSolutionVector();
+                    VecCopy(oldSolutionVector, currentSolutionVector) >> ablate::utilities::PetscUtilities::checkError;
                 }
 
                 // Now march the time stepper until it is converged
-                oldFlameStepper->Solve();
+                currentFlameStepper->Solve();
 
                 // Save this flame
                 std::cout << "\tWriting results for flame " << flameId << std::endl;
                 flameSerializer->Reset();
-                oldFlameStepper->RegisterSerializableComponents(flameSerializer);
-                flameSerializer->Serialize(oldFlameStepper->GetTS(), (PetscInt)flameId, (PetscReal)flameId, oldFlameStepper->GetSolutionVector());
+                currentFlameStepper->RegisterSerializableComponents(flameSerializer);
+                flameSerializer->Serialize(currentFlameStepper->GetTS(), (PetscInt)flameId, (PetscReal)flameId, currentFlameStepper->GetSolutionVector());
+
+                // update the scale factor
+                totalScaleFactor *= scaleFactor;
+                // Create an options object to scale
+                auto scaleOptions = ablate::parameters::MapParameters::Create({{"timestepper::domain::options::dm_plex_scale", totalScaleFactor}});
 
                 // reset the parser
-                parser = std::make_shared<cppParser::YamlParser>(filePath);
+                parser = std::make_shared<cppParser::YamlParser>(filePath, scaleOptions->GetMap());
+
+                // store the current time stepper to use as a starting point for the new
+                oldFlameStepper = currentFlameStepper;
             }
         }
     }
