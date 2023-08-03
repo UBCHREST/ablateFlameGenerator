@@ -3,8 +3,9 @@
 #include <domain/subDomain.hpp>
 #include <utility>
 
-ablateFlameGenerator::VariableChange::VariableChange(std::string variableName, double convergenceTolerance, ablate::utilities::MathUtilities::Norm convergenceNorm, std::shared_ptr<ablate::domain::Region> region)
-    : variableName(std::move(variableName)), convergenceTolerance(convergenceTolerance),convergenceNorm(convergenceNorm), region(std::move(region)) {}
+ablateFlameGenerator::VariableChange::VariableChange(std::string variableName, double convergenceTolerance, ablate::utilities::MathUtilities::Norm convergenceNorm,
+                                                     std::shared_ptr<ablate::domain::Region> region)
+    : variableName(std::move(variableName)), convergenceTolerance(convergenceTolerance), convergenceNorm(convergenceNorm), region(std::move(region)) {}
 
 ablateFlameGenerator::VariableChange::~VariableChange() {
     if (previousValues) {
@@ -28,12 +29,10 @@ void ablateFlameGenerator::VariableChange::Initialize(const ablate::domain::Doma
     // Create a copy of the local vec
     VecDuplicate(locVec, &previousValues) >> ablate::utilities::PetscUtilities::checkError;
     // Set the block size as one so that it only produces one norm value
-    VecSetBlockSize(previousValues, 1) >>  ablate::utilities::PetscUtilities::checkError;
+    VecSetBlockSize(previousValues, 1) >> ablate::utilities::PetscUtilities::checkError;
 
     // copy over the current values to use as the previous state
     VecCopy(locVec, previousValues) >> ablate::utilities::PetscUtilities::checkError;
-
-
 
     // restore
     subDomain->RestoreFieldLocalVector(field, &subIs, &locVec, &subDm) >> ablate::utilities::PetscUtilities::checkError;
@@ -54,7 +53,7 @@ bool ablateFlameGenerator::VariableChange::CheckConvergence(const ablate::domain
 
     // Compute the norm
     PetscReal norm;
-    ablate::utilities::MathUtilities::ComputeNorm(convergenceNorm, locVec, previousValues, &norm ) >> ablate::utilities::PetscUtilities::checkError;
+    ablate::utilities::MathUtilities::ComputeNorm(convergenceNorm, locVec, previousValues, &norm) >> ablate::utilities::PetscUtilities::checkError;
 
     // Create a copy of the local vec
     VecCopy(locVec, previousValues) >> ablate::utilities::PetscUtilities::checkError;
@@ -64,11 +63,11 @@ bool ablateFlameGenerator::VariableChange::CheckConvergence(const ablate::domain
 
     // Check to see if converged
     bool converged = norm < convergenceTolerance;
-    if (log){
-        if(converged){
-            log->Printf("\t VariableChange %s converged to %g", variableName.c_str(), norm);
-        }else{
-            log->Printf("\t VariableChange %s error: %g", variableName.c_str(), norm);
+    if (log) {
+        if (converged) {
+            log->Printf("\tVariableChange %s converged to %g\n", variableName.c_str(), norm);
+        } else {
+            log->Printf("\tVariableChange %s error: %g\n", variableName.c_str(), norm);
         }
     }
 
