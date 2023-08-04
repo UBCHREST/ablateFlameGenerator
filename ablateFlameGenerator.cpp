@@ -7,6 +7,7 @@
 #include <io/interval/fixedInterval.hpp>
 #include <iostream>
 #include <memory>
+#include <parameters/petscPrefixOptions.hpp>
 #include "builder.hpp"
 #include "localPath.hpp"
 #include "parameters/mapParameters.hpp"
@@ -71,7 +72,10 @@ int main(int argc, char** argv) {
 
         {
             // load in the base mesh and input file
-            std::shared_ptr<cppParser::YamlParser> parser = std::make_shared<cppParser::YamlParser>(filePath);
+            // build options from the command line
+            const char* replacementInputPrefix = "-yaml::";
+            auto yamlOptions = std::make_shared<ablate::parameters::PetscPrefixOptions>(replacementInputPrefix);
+            std::shared_ptr<cppParser::YamlParser> parser = std::make_shared<cppParser::YamlParser>(filePath, yamlOptions->GetMap());
 
             // Get the flameGenerator parameters
             auto flameGeneratorParameters = parser->GetByName<ablate::parameters::Parameters>("flameGenerator");
@@ -144,7 +148,8 @@ int main(int argc, char** argv) {
                 // update the scale factor
                 totalScaleFactor *= scaleFactor;
                 // Create an options object to scale
-                auto scaleOptions = ablate::parameters::MapParameters::Create({{"timestepper::domain::options::dm_plex_scale", totalScaleFactor}});
+                auto scaleOptions = ablate::parameters::MapParameters::Create(yamlOptions->GetMap());
+                scaleOptions->Insert("timestepper::domain::options::dm_plex_scale", totalScaleFactor);
 
                 // reset the parser
                 parser = std::make_shared<cppParser::YamlParser>(filePath, scaleOptions->GetMap());

@@ -245,7 +245,7 @@ framework with CLion.
     cmake --build --preset=ablate-flame-generator-debug-build -j
 
     # optimized
-    cmake --preset=ablate-flame-generator-opt-build
+    cmake --preset=ablate-flame-generator-opt
     cmake --build --preset=ablate-flame-generator-opt-build -j
     ```
 4. Run the client executable (You may have changed the name of the executable)
