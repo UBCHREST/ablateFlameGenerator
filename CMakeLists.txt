@@ -14,7 +14,7 @@ if ("${ABLATE_PATH}" STREQUAL "")
     FetchContent_Declare(
             ablate
             GIT_REPOSITORY https://github.com/UBCHREST/ablate.git
-            GIT_TAG v0.11.23
+            GIT_TAG v0.11.34
     )
     FetchContent_MakeAvailable(ablate)
 

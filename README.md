@@ -241,11 +241,11 @@ framework with CLion.
    capabilities you may want to specify debug. If you are running large simulations specify opt.
     ```bash
     # debug mode
-    cmake  --preset=ablate-flame-generator-debug
+    cmake --preset=ablate-flame-generator-debug
     cmake --build --preset=ablate-flame-generator-debug-build -j
 
     # optimized
-    cmake  --preset=ablate-flame-generator-debug-build
+    cmake --preset=ablate-flame-generator-opt-build
     cmake --build --preset=ablate-flame-generator-opt-build -j
     ```
 4. Run the client executable (You may have changed the name of the executable)
